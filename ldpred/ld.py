@@ -3,15 +3,15 @@ Various useful LD functions.
 
 
 """
-try: 
+try:
     import scipy as sp
 except Exception:
     print 'Using Numpy instead of Scipy.'
     import numpy as sp
-    
+
 import sys
 import time
-from numpy import linalg 
+from numpy import linalg
 
 
 
@@ -19,7 +19,7 @@ def get_LDpred_ld_tables(snps, ld_radius=100, ld_window_size=0, h2=None, n_train
     """
     Calculates LD tables, and the LD score in one go...
     """
-    
+
     ld_dict = {}
     m, n = snps.shape
     print m, n
@@ -41,23 +41,23 @@ def get_LDpred_ld_tables(snps, ld_radius=100, ld_window_size=0, h2=None, n_train
         window_sizes = []
         ld_boundaries = []
         for snp_i, snp in enumerate(snps):
-            curr_cm = gm[snp_i] 
-            
+            curr_cm = gm[snp_i]
+
             # Now find lower boundary
             start_i = snp_i
             min_cm = gm[snp_i]
             while start_i > 0 and min_cm > curr_cm - gm_ld_radius:
                 start_i = start_i - 1
                 min_cm = gm[start_i]
-            
+
             # Now find the upper boundary
             stop_i = snp_i
             max_cm = gm[snp_i]
             while stop_i > 0 and max_cm < curr_cm + gm_ld_radius:
                 stop_i = stop_i + 1
                 max_cm = gm[stop_i]
-            
-            ld_boundaries.append([start_i, stop_i])    
+
+            ld_boundaries.append([start_i, stop_i])
             curr_ws = stop_i - start_i
             window_sizes.append(curr_ws)
             assert curr_ws > 0, 'Some issues with the genetic map'
@@ -68,7 +68,7 @@ def get_LDpred_ld_tables(snps, ld_radius=100, ld_window_size=0, h2=None, n_train
             ld_dict[snp_i] = D_i
             lds_i = sp.sum(r2s - (1 - r2s) / (n - 2), dtype='float32')
             ld_scores[snp_i] = lds_i
-        
+
         avg_window_size = sp.mean(window_sizes)
         print 'Average # of SNPs in LD window was %0.2f' % avg_window_size
         if ld_window_size == 0:
@@ -76,7 +76,7 @@ def get_LDpred_ld_tables(snps, ld_radius=100, ld_window_size=0, h2=None, n_train
         ret_dict['ld_boundaries'] = ld_boundaries
     ret_dict['ld_dict'] = ld_dict
     ret_dict['ld_scores'] = ld_scores
-    
+
     if ld_window_size > 0:
         ref_ld_matrices = []
         inf_shrink_matrices = []
@@ -100,7 +100,7 @@ def get_LDpred_ld_tables(snps, ld_radius=100, ld_window_size=0, h2=None, n_train
 def calc_ld_table(snps, max_ld_dist=2000, min_r2=0.2, verbose=True, normalize=False):
     """
     Calculate LD between all SNPs using a sliding LD square
-    
+
     This function only retains r^2 values above the given threshold
     """
     # Normalize SNPs (perhaps not necessary, but cheap)
@@ -109,11 +109,11 @@ def calc_ld_table(snps, max_ld_dist=2000, min_r2=0.2, verbose=True, normalize=Fa
         snps = (snps - sp.mean(snps, 0)) / sp.std(snps, 0)
         snps = snps.T
 
-    
+
     if verbose:
         print 'Calculating LD table'
     t0 = time.time()
-    num_snps, num_indivs = snps.shape    
+    num_snps, num_indivs = snps.shape
     ld_table = {}
     for i in range(num_snps):
         ld_table[i] = {}
@@ -157,21 +157,21 @@ def ml_LD_shrink(beta_hats, genotypes=None, reference_ld_mats=None, window_metho
                               ld_window_size=100, ld_radius=20, verbose=False):
     """
     Calculate the joint least square estimates using LD information.
-    
-    Two methods are implemented, i.e. 'sliding', and 'tiling'. 
-    
+
+    Two methods are implemented, i.e. 'sliding', and 'tiling'.
+
     If reference_ld_mats are supplied, it uses those, otherwise it uses the LD in the genotype data.
-    """    
+    """
     if verbose:
         print 'Doing LD correction'
     t0 = time.time()
     num_betas = len(beta_hats)
     updated_betas = sp.empty(num_betas)
     m = len(beta_hats)
-    
+
     if window_method == 'tiling':
         for i, wi in enumerate(range(0, num_betas, ld_window_size)):
-            start_i = wi 
+            start_i = wi
             stop_i = min(num_betas, wi + ld_window_size)
             if reference_ld_mats != None:
                 D = reference_ld_mats[i]
@@ -183,18 +183,18 @@ def ml_LD_shrink(beta_hats, genotypes=None, reference_ld_mats=None, window_metho
                 else:
                     raise NotImplementedError
             D_inv = linalg.pinv(D)
-            updated_betas[start_i: stop_i] = sp.dot(D_inv , beta_hats[start_i: stop_i])  # Adjust the beta_hats    
+            updated_betas[start_i: stop_i] = sp.dot(D_inv , beta_hats[start_i: stop_i])  # Adjust the beta_hats
             if verbose:
                 sys.stdout.write('\b\b\b\b\b\b\b%0.2f%%' % (100.0 * (min(1, float(wi + 1) / num_betas))))
                 sys.stdout.flush()
-    
+
     elif window_method == 'sliding':
         if genotypes == None:
             raise NotImplementedError
         X = genotypes[0: ld_radius]
         num_indivs = X.shape[1]
         D_prev = sp.dot(X, X.T) / num_indivs
-        D_inv = linalg.pinv(D_prev)                        
+        D_inv = linalg.pinv(D_prev)
         updated_betas[0: ld_radius] = sp.dot(D_inv , beta_hats[0: ld_radius])
         for i in range(1, num_betas - ld_radius):
             D = sp.empty((ld_radius, ld_radius))
@@ -205,14 +205,14 @@ def ml_LD_shrink(beta_hats, genotypes=None, reference_ld_mats=None, window_metho
             for j in range(ld_radius):
                 D[ld_radius - 1, j] = last_row[j]
                 D[j, ld_radius - 1] = last_row[j]
-            D_inv = linalg.pinv(D)                        
+            D_inv = linalg.pinv(D)
             i_focal = i + ld_radius / 2
             updated_betas[i_focal] = sp.dot(D_inv[ld_radius / 2] , beta_hats[i:i + ld_radius])
             if verbose:
                 sys.stdout.write('\b\b\b\b\b\b\b\b\b%0.1f%%' % (100.0 * (min(1, float(i + 1) / (num_betas - ld_radius)))))
-                sys.stdout.flush()     
+                sys.stdout.flush()
         updated_betas[-ld_radius:] = sp.dot(D_inv , beta_hats[-ld_radius:])
-        
+
 
     t1 = time.time()
     t = (t1 - t0)
@@ -221,16 +221,16 @@ def ml_LD_shrink(beta_hats, genotypes=None, reference_ld_mats=None, window_metho
     return updated_betas
 
 
- 
+
 def ml_iter(beta_hats, genotypes, ld_radius=20,
             verbose=False, iter_percentile=0.05,):
     """
     Yang et al. iterative scheme.
-    
+
     Idea:
     - While # selected betas is < threshold
     -     Sort betas
-    -     Pick the largest beta that hasn't been selected. 
+    -     Pick the largest beta that hasn't been selected.
     -     For each marker in window around selected marker:
     -         Update LD matrix
     -         Invert LD matrix
@@ -240,7 +240,7 @@ def ml_iter(beta_hats, genotypes, ld_radius=20,
 
     if verbose:
         print 'Performing iterative approach'
-    
+
     # Ordering the beta_hats, and storing the order
     m = len(beta_hats)
     beta_hats = beta_hats.tolist()
@@ -292,13 +292,13 @@ def ml_iter(beta_hats, genotypes, ld_radius=20,
             updated_beta_hats[i] = 0
     updated_beta_hats = sp.array(updated_beta_hats)
     return updated_beta_hats
-    
+
 
 
 def smart_ld_pruning(scores, ld_table, max_ld=0.5, verbose=False, reverse=False):
     """
     Prunes SNPs in LD, but with smaller scores (p-values or betas)
-    
+
     If using betas, set reversed to True.
     """
     if verbose:
@@ -330,13 +330,13 @@ def smart_ld_pruning(scores, ld_table, max_ld=0.5, verbose=False, reverse=False)
     t = (t1 - t0)
     if verbose:
         print '\nIt took %d minutes and %0.2f seconds to LD-prune' % (t / 60, t % 60)
-    return pruning_vector             
+    return pruning_vector
 
 
 
 def ld_pruning(ld_table, max_ld=0.5, verbose=False):
     """
-    Prunes SNPs in LD, in random order. 
+    Prunes SNPs in LD, in random order.
     """
     if verbose:
         print 'Calculating LD table'
@@ -362,5 +362,3 @@ def ld_pruning(ld_table, max_ld=0.5, verbose=False):
     if verbose:
         print '\nIt took %d minutes and %0.2f seconds to LD-prune' % (t / 60, t % 60)
     return filter_vector
-
-

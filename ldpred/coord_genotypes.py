@@ -1,55 +1,55 @@
 #!/usr/bin/env python
 """
-Coordinate genotypes and summary statistics datasets for calculating polygenic risk scores.  
-Only SNPs that overlap between the two (or three) different datasets are retained.  
+Coordinate genotypes and summary statistics datasets for calculating polygenic risk scores.
+Only SNPs that overlap between the two (or three) different datasets are retained.
 
-Usage: 
-coord --gf=PLINK_LD_REF_GENOTYPE_FILE --ssf=SUM_STATS_FILE --N=SS_SAMPLE_SIZE  --out=OUT_COORD_FILE 
+Usage:
+coord --gf=PLINK_LD_REF_GENOTYPE_FILE --ssf=SUM_STATS_FILE --N=SS_SAMPLE_SIZE  --out=OUT_COORD_FILE
                             [--vgf=PLINK_VAL_GENOTYPE_FILE --vbim=VAL_PLINK_BIM_FILE  --ssf_format=SSF_FORMAT --gmdir=GENETIC_MAP_DIR
-                             --gf_format=GENOTYPE_FILE_FORMAT --indiv_list=INDIV_LIST_FILE  --maf=MAF_THRES  --skip_coordination  --check_mafs] 
+                             --gf_format=GENOTYPE_FILE_FORMAT --indiv_list=INDIV_LIST_FILE  --maf=MAF_THRES  --skip_coordination  --check_mafs]
 
- - PLINK_LD_REF_GENOTYPE_FILE (and PLINK_VAL_GENOTYPE_FILE) should be a (full path) filename prefix to a standard PLINK bed file 
-   (without .bed) Make sure that the fam and bim files with same names are in the same directory.  PLINK_LD_REF_GENOTYPE_FILE refers 
-   LD reference genotypes, and PLINK_VAL_GENOTYPE_FILE refers to validation genotypes. It is not necessary to have LD validation 
+ - PLINK_LD_REF_GENOTYPE_FILE (and PLINK_VAL_GENOTYPE_FILE) should be a (full path) filename prefix to a standard PLINK bed file
+   (without .bed) Make sure that the fam and bim files with same names are in the same directory.  PLINK_LD_REF_GENOTYPE_FILE refers
+   LD reference genotypes, and PLINK_VAL_GENOTYPE_FILE refers to validation genotypes. It is not necessary to have LD validation
    genotypes at this stage.
 
- - SUM_STATS_FILE should be a (full path) filename prefix for a text file with the GWAS summary statistics.  The STANDARD format 
+ - SUM_STATS_FILE should be a (full path) filename prefix for a text file with the GWAS summary statistics.  The STANDARD format
    (see below) of this file should be:
      chr     pos     ref     alt     reffrq  info    rs       pval    effalt
     chr1    1020428 C       T       0.85083 0.98732 rs6687776    0.0587  -0.0100048507289348
     chr1    1020496 G       A       0.85073 0.98751 rs6678318    0.1287  -0.00826075392985992
     ..
     ..
-    
+
  - SS_SAMPLE_SIZE: This is the approximate number of individuals used for calculating the GWAS summary statistics.
 
- - OUT_COORD_FILE: The output file.  This file will follow a HDF5 format and contain both LD-reference genotypes and summary 
+ - OUT_COORD_FILE: The output file.  This file will follow a HDF5 format and contain both LD-reference genotypes and summary
    statistics.
- 
- - VAL_PLINK_BIM_FILE (optional): This is a PLINK BIM file which can be used to filter the set of SNPs down to the set of validation SNPs.  To 
+
+ - VAL_PLINK_BIM_FILE (optional): This is a PLINK BIM file which can be used to filter the set of SNPs down to the set of validation SNPs.  To
    maximize accuracy, it's best to calculate the LDpred weights for the SNPs that are used to calculate the risk scores.
- 
- - SSF_FORMAT (optional): This is the format type of the summary statistics file.  Currently there are two implementations, "STANDARD", "BASIC", 
+
+ - SSF_FORMAT (optional): This is the format type of the summary statistics file.  Currently there are two implementations, "STANDARD", "BASIC",
    "GIANT", "PGC", and "PGC_large".  The standard format is described above.
-   
+
    "BASIC" format, which contains of the basic required information, is as follows:
-    hg19chrc    snpid    a1    a2    bp    or    p       
-    chr1    rs4951859    C    G    729679    0.97853    0.2083  
-    chr1    rs142557973    T    C    731718    1.01949    0.3298  
+    hg19chrc    snpid    a1    a2    bp    or    p
+    chr1    rs4951859    C    G    729679    0.97853    0.2083
+    chr1    rs142557973    T    C    731718    1.01949    0.3298
     ..
     ..
 
- - GENOTYPE_FILE_FORMAT (optional): The expected genotype format.  The standard format is PLINK.  Other formats implemented is 
+ - GENOTYPE_FILE_FORMAT (optional): The expected genotype format.  The standard format is PLINK.  Other formats implemented is
    DECODE format.  If the DECODE format is used, then the program assumes that the data directory is supplied in the --gf flag.
-   
+
  - INDIV_LIST_FILE (optional): List of individuals to include in the analysis.  Currently required for the DECODE format.
- 
+
  - MAF_THRES (optional): Minor allele frequency threshold, i.e. SNPs with MAF smaller than threshold will be excluded from analysis.
 
  - --skip_cordination flag assumes that the alleles have already been coordinated between LD reference, validation samples,
    and the summary statistics files.
 
- - GENETIC_MAP_DIR (optional): The directory of genetic a genetic map. 
+ - GENETIC_MAP_DIR (optional): The directory of genetic a genetic map.
 
 
  2015 (c) Bjarni J Vilhjalmsson: bjarni.vilhjalmsson@gmail.com
@@ -242,7 +242,7 @@ def _parse_decode_genotypes_(decode_file, sids, pns, ocg):
         freqs[i] = freq
 
     # Calculate stds
-    snp_stds = sp.sqrt(2 * freqs * (1 - freqs))  
+    snp_stds = sp.sqrt(2 * freqs * (1 - freqs))
 
     ocg.create_dataset('snp_stds_ref', data=snp_stds)
     ocg.create_dataset('snp_means_ref', data=snp_means)
@@ -907,9 +907,9 @@ def parse_sum_stats_basic(filename=None,
     """
     Input format:
 
-    hg19chrc    snpid    a1    a2    bp    or    p       
-    chr1    rs4951859    C    G    729679    0.97853    0.2083  
-    chr1    rs142557973    T    C    731718    1.01949    0.3298  
+    hg19chrc    snpid    a1    a2    bp    or    p
+    chr1    rs4951859    C    G    729679    0.97853    0.2083
+    chr1    rs142557973    T    C    731718    1.01949    0.3298
     ...
 
     """
@@ -1209,15 +1209,15 @@ def coordinate_genot_ss(genotype_file=None,
 
         # Parse SNPs
         snp_indices = sp.array(chrom_d['snp_indices'])
-        
+
         # Pinpoint where the SNPs are in the file.
         snp_indices = snp_indices[ok_indices['g']]
         raw_snps, freqs = plinkfiles.parse_plink_snps(
             genotype_file, snp_indices)
         print 'raw_snps.shape=', raw_snps.shape
 
-        snp_stds = sp.sqrt(2 * freqs * (1 - freqs))  
-        snp_means = freqs * 2  
+        snp_stds = sp.sqrt(2 * freqs * (1 - freqs))
+        snp_means = freqs * 2
 
         betas = betas[ok_indices['ss']]
         log_odds = log_odds[ok_indices['ss']]
@@ -1315,7 +1315,7 @@ def coordinate_genot_ss(genotype_file=None,
         num_common_snps += len(betas)
 
     if plinkf_dict['has_phenotype']:
-        
+
         # Now calculate the prediction R^2
         corr = sp.corrcoef(plinkf_dict['phenotypes'], risk_scores)[0, 1]
         rb_corr = sp.corrcoef(plinkf_dict['phenotypes'], rb_risk_scores)[0, 1]
@@ -1334,7 +1334,7 @@ def coordinate_genotypes_ss_w_ld_ref(genotype_file=None,
                                      min_maf=0.01,
                                      skip_coordination=False):
     print 'Coordinating things w genotype file: %s \nref. genot. file: %s' % (genotype_file, reference_genotype_file)
-    
+
     from plinkio import plinkfile
     plinkf = plinkfile.PlinkFile(genotype_file)
 
@@ -1547,8 +1547,8 @@ def coordinate_genotypes_ss_w_ld_ref(genotype_file=None,
         snp_stds = sp.sqrt(2 * freqs * (1 - freqs))
         snp_means = freqs * 2
 
-        betas = betas[ok_indices['ss']]  
-        log_odds = log_odds[ok_indices['ss']]  
+        betas = betas[ok_indices['ss']]
+        log_odds = log_odds[ok_indices['ss']]
 
         ps = ssg['ps'][...][ok_indices['ss']]
         nts = sp.array(ok_nts)  # [order]
@@ -1654,9 +1654,9 @@ def main():
     p_dict = parse_parameters()
     print """
     Note: For maximal accuracy all SNPs with LDpred weights should be included in the validation data set.
-    If they are a subset of the validation data set, then we suggest recalculate LDpred for the overlapping SNPs. 
-    You can coordinate across the three data sets by either using the same LD reference and the validation data, or using 
-    the --vbim argument, and supply the validation data set PLINK formatted bim file. 
+    If they are a subset of the validation data set, then we suggest recalculate LDpred for the overlapping SNPs.
+    You can coordinate across the three data sets by either using the same LD reference and the validation data, or using
+    the --vbim argument, and supply the validation data set PLINK formatted bim file.
     """
     if p_dict['N'] is None:
         print 'Please specify an integer value for the sample size used to calculate the GWAS summary statistics.'

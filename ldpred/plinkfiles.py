@@ -11,7 +11,7 @@ def get_chrom_dict(loci, chromosomes):
     for chrom in chromosomes:
         chr_str = 'chrom_%s' % chrom
         chr_dict[chr_str] = {'sids':[], 'snp_indices':[], 'positions':[], 'nts':[]}
-      
+
     for i, l in enumerate(loci):
         chrom = l.chromosome
         pos = l.bp_position
@@ -20,7 +20,7 @@ def get_chrom_dict(loci, chromosomes):
         chr_dict[chr_str]['snp_indices'].append(i)
         chr_dict[chr_str]['positions'].append(pos)
         chr_dict[chr_str]['nts'].append([l.allele1, l.allele2])
-      
+
     print 'Genotype dictionary filled'
     return chr_dict
 

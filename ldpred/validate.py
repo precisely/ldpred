@@ -1,44 +1,44 @@
 #!/usr/bin/env python
 """
-    Takes LDpred.py (or LD_pruning_thres.py) effect estimates, and (validation) genotypes in PLINK bed format as input.  
-    The script then works out overlap and outputs predictions or risk scores as well as some prediction 
+    Takes LDpred.py (or LD_pruning_thres.py) effect estimates, and (validation) genotypes in PLINK bed format as input.
+    The script then works out overlap and outputs predictions or risk scores as well as some prediction
     accuracy statistics.
-    
+
     Note that for maximal accuracy all SNPs with LDpred weights should be included in the validation dataset.
     If they are a subset of the validation dataset, then we suggest recalculate LDpred for the overlapping SNPs.
-    
-    
-    
 
-Usage: 
-validate --vgf=PLINK_VAL_GENOTYPE_FILE  --rf=RESULT_FILE_PREFIX  --out=OUTPUT_FILE_PREFIX  [--res_format=LDPRED 
-                    --split_by_chrom --pf=PHEN_FILE --pf_format=STANDARD --cov_file=COVARIATE_FILE --pcs_file=PCS_FILE 
+
+
+
+Usage:
+validate --vgf=PLINK_VAL_GENOTYPE_FILE  --rf=RESULT_FILE_PREFIX  --out=OUTPUT_FILE_PREFIX  [--res_format=LDPRED
+                    --split_by_chrom --pf=PHEN_FILE --pf_format=STANDARD --cov_file=COVARIATE_FILE --pcs_file=PCS_FILE
                     --PS=FRACTIONS_CAUSAL  --TS=PVAL_THRESHOLDS --adjust_for_sex  --adjust_for_covariates  --adjust_for_pcs]
-    
- 
+
+
  - PLINK_VAL_GENOTYPE_FILE: PLINK formatted genotypes for which we want to calculate risk scores.
- 
+
  - RESULT_FILE_PREFIX: SNP weights file, e.g. LDpred SNP weights.
 
- - OUTPUT_FILE_PREFIX:  The prefix of output file.  
+ - OUTPUT_FILE_PREFIX:  The prefix of output file.
 
  - RESULT_FILE_FORMAT: The format to expect the results to be in.  The default format is LDPRED, which refers to the format which
    running LDpred output. LDPRED-INF and P+T (LD-pruning + p-value thresholding) are also implemented.
- 
- - PHEN_FILE: Is a file with individual IDs and phenotypes.  Two formats are supported a (PLINK) FAM format, 
-              and STANDARD format (default), which is a whitespace/tab delimited file with two columns IID and PHEN.  
- 
- - PVAL_THRESHOLDS: This option is only valid if a P+T result file prefix is supplied.  It's a list of p-value thresholds, 
-                    separated by a comma (without space), to be used for LDpred. Default values are 
+
+ - PHEN_FILE: Is a file with individual IDs and phenotypes.  Two formats are supported a (PLINK) FAM format,
+              and STANDARD format (default), which is a whitespace/tab delimited file with two columns IID and PHEN.
+
+ - PVAL_THRESHOLDS: This option is only valid if a P+T result file prefix is supplied.  It's a list of p-value thresholds,
+                    separated by a comma (without space), to be used for LDpred. Default values are
                     --TS=1,0.3,0.1,0.03,0.01,0.003,0.001,0.0003,0.0001,3E-5,1E-5,1E-6,1E-7,1E-8
 
- - FRACTIONS_CAUSAL: This option is only valid if a LDPRED result file prefix is supplied.  A list of comma separated 
-                     (without space) values between 1 and 0, excluding 0.  1 corresponds to the infinitesimal model 
-                     and will yield results similar to LDpred-inf.  Default values are 
-                     --PS=1,0.3,0.1,0.03,0.01,0.003,0.001,0.0003,0.0001 
- 
+ - FRACTIONS_CAUSAL: This option is only valid if a LDPRED result file prefix is supplied.  A list of comma separated
+                     (without space) values between 1 and 0, excluding 0.  1 corresponds to the infinitesimal model
+                     and will yield results similar to LDpred-inf.  Default values are
+                     --PS=1,0.3,0.1,0.03,0.01,0.003,0.001,0.0003,0.0001
+
  2015 (c) Bjarni J Vilhjalmsson: bjarni.vilhjalmsson@gmail.com
- 
+
  """
 
 import getopt
@@ -179,6 +179,8 @@ def get_prs(genotype_file, rs_id_map, phen_map=None):
     snp_i = 0
 
     for locus, row in it.izip(locus_list, plinkf):
+        # locus: variant (locus.allele1, locus.allele2, locus.bp_position, locus.chromosome)
+        # row: array of genotypes (standard values: 0, 1, 2) with one entry per individual
         upd_pval_beta = 0
         try:
             # Check rs-ID
@@ -678,7 +680,7 @@ def main():
     res_dict = {}
     if p_dict['res_format'] == 'LDPRED':
         weights_file = '%s_LDpred-inf.txt' % (p_dict['rf'])
-        
+
         if os.path.isfile(weights_file):
             print ''
             print 'Calculating LDpred-inf risk scores'
@@ -739,7 +741,7 @@ def main():
     else:
         raise NotImplementedError(
             'Results file format missing or unknown: %s' % p_dict['res_format'])
-    
+
     if prs_file_is_missing:
         print 'PRS weights files were not found.  This could be due to a misspecified --rf flag, or other issues.'
 
